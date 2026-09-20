@@ -1,6 +1,19 @@
 import { Agent, CreateAgentPayload, CreateToolPayload, ProviderMeta, Tool } from '../types';
 
-const SERVER_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '');
+function getBackendUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:4000';
+  let u = envUrl.trim().replace(/\/$/, '');
+  if (!u.startsWith('http://') && !u.startsWith('https://')) {
+    if (!u.includes('.')) {
+      u = `${u}.onrender.com`;
+    }
+    u = `https://${u}`;
+  }
+  return u;
+}
+
+const SERVER_URL = getBackendUrl();
 const API_BASE = `${SERVER_URL}/api`;
 
 export async function getHealth() {

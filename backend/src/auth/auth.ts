@@ -4,7 +4,30 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+function normalizeUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  let u = url.trim().replace(/\/$/, '');
+  if (!u) return undefined;
+  if (!u.startsWith('http://') && !u.startsWith('https://')) {
+    if (!u.includes('.')) {
+      u = `${u}.onrender.com`;
+    }
+    u = `https://${u}`;
+  }
+  return u;
+}
+
+if (process.env.BETTER_AUTH_URL) {
+  const normalized = normalizeUrl(process.env.BETTER_AUTH_URL);
+  if (normalized) {
+    process.env.BETTER_AUTH_URL = normalized;
+  }
+}
+
+const frontendUrl = normalizeUrl(process.env.FRONTEND_URL);
+
 export const auth = betterAuth({
+  baseURL: normalizeUrl(process.env.BETTER_AUTH_URL),
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -21,7 +44,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.replace(/\/$/, '')] : []),
+    ...(frontendUrl ? [frontendUrl] : []),
   ],
 });
 
