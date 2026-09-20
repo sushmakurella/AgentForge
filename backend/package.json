@@ -1,5 +1,5 @@
 {
-  "name": "agent-marketplace-backend",
+  "name": "agentforge-backend",
   "version": "0.0.1",
   "description": "NestJS backend for No-Code Agent Marketplace",
   "scripts": {

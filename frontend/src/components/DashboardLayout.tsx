@@ -65,14 +65,14 @@ export default function DashboardLayout() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                Agent Marketplace & Studio
+                AgentForge
               </h1>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                 v1.2
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Enterprise Multi-Model Agent Platform • Neon PostgreSQL
+              Enterprise AI Agent Studio & Marketplace • Neon PostgreSQL
             </p>
           </div>
         </div>

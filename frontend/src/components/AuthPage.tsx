@@ -75,14 +75,14 @@ export default function AuthPage({ theme, setTheme, initialMode = 'signin' }: Au
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                Agent Marketplace & Studio
+                AgentForge
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                 v1.2
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Enterprise Multi-Model Agent Platform
+              Enterprise AI Agent Studio & Marketplace
             </p>
           </div>
         </div>
@@ -261,7 +261,7 @@ export default function AuthPage({ theme, setTheme, initialMode = 'signin' }: Au
 
       {/* Footer */}
       <footer className="w-full text-center py-4 text-[11px] text-slate-400 dark:text-slate-500">
-        © 2026 Agent Marketplace & Studio. All rights reserved.
+        © 2026 AgentForge. All rights reserved.
       </footer>
     </div>
   );
