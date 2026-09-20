@@ -42,9 +42,27 @@ export default function DashboardLayout() {
   const { data: session } = useSession();
   const navigate = useNavigate();
 
+  const localUser = (() => {
+    try {
+      const raw = localStorage.getItem('agentforge_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const currentUser = session?.user || localUser;
+
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login', { replace: true });
+    try {
+      await signOut();
+    } catch (e) {
+      console.warn('Sign out error:', e);
+    } finally {
+      localStorage.removeItem('agentforge_token');
+      localStorage.removeItem('agentforge_user');
+      window.location.href = '/login';
+    }
   };
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
@@ -109,26 +127,26 @@ export default function DashboardLayout() {
           </button>
 
           {/* User Profile & Sign Out */}
-          {session?.user && (
+          {currentUser && (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                {session.user.image ? (
+                {currentUser.image ? (
                   <img
-                    src={session.user.image}
-                    alt={session.user.name || 'User'}
+                    src={currentUser.image}
+                    alt={currentUser.name || 'User'}
                     className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-700 object-cover"
                   />
                 ) : (
                   <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                    {(session.user.name || session.user.email || 'U')[0].toUpperCase()}
+                    {(currentUser.name || currentUser.email || 'U')[0].toUpperCase()}
                   </div>
                 )}
                 <div className="hidden sm:flex flex-col text-left">
                   <span className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
-                    {session.user.name || session.user.email?.split('@')[0]}
+                    {currentUser.name || currentUser.email?.split('@')[0]}
                   </span>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight truncate max-w-[120px]">
-                    {session.user.email}
+                    {currentUser.email}
                   </span>
                 </div>
               </div>

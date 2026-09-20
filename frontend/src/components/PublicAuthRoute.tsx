@@ -24,7 +24,11 @@ export default function PublicAuthRoute({ children }: PublicAuthRouteProps) {
     );
   }
 
-  if (session?.user) {
+  const hasLocalAuth = typeof window !== 'undefined' && (
+    !!localStorage.getItem('agentforge_token') || !!localStorage.getItem('agentforge_user')
+  );
+
+  if (session?.user || hasLocalAuth) {
     const from = (location.state as any)?.from?.pathname || '/';
     return <Navigate to={from} replace />;
   }

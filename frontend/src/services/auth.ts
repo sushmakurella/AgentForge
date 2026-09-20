@@ -15,6 +15,23 @@ function getBackendUrl(): string {
 
 export const authClient = createAuthClient({
   baseURL: getBackendUrl(),
+  fetchOptions: {
+    credentials: 'include',
+    onRequest(ctx) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agentforge_token') : null;
+      if (token) {
+        ctx.headers.set('Authorization', `Bearer ${token}`);
+      }
+    },
+    onResponse(ctx) {
+      try {
+        const setToken = ctx.response.headers.get('set-auth-token');
+        if (setToken && typeof window !== 'undefined') {
+          localStorage.setItem('agentforge_token', setToken);
+        }
+      } catch {}
+    },
+  },
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

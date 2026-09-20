@@ -32,8 +32,9 @@ export default function AuthPage({ theme, setTheme, initialMode = 'signin' }: Au
     setLoading(true);
 
     try {
+      let res: any;
       if (mode === 'signup') {
-        const res = await signUp.email({
+        res = await signUp.email({
           email: email.trim(),
           password,
           name: name.trim() || email.split('@')[0],
@@ -44,7 +45,7 @@ export default function AuthPage({ theme, setTheme, initialMode = 'signin' }: Au
           return;
         }
       } else {
-        const res = await signIn.email({
+        res = await signIn.email({
           email: email.trim(),
           password,
         });
@@ -55,9 +56,19 @@ export default function AuthPage({ theme, setTheme, initialMode = 'signin' }: Au
         }
       }
 
+      const resData = (res as any)?.data;
+      if (resData?.token) {
+        localStorage.setItem('agentforge_token', resData.token);
+      }
+      if (resData?.user) {
+        localStorage.setItem('agentforge_user', JSON.stringify(resData.user));
+      } else {
+        localStorage.setItem('agentforge_user', JSON.stringify({ email: email.trim(), name: name.trim() || email.split('@')[0] }));
+      }
+
       // Navigate smoothly to target or dashboard
       const from = (location.state as any)?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      window.location.href = from;
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
       setLoading(false);

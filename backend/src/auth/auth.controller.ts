@@ -32,7 +32,8 @@ export class AuthController {
 
       res.status(webRes.status);
       webRes.headers.forEach((val, key) => {
-        if (key === 'set-cookie') {
+        const lower = key.toLowerCase();
+        if (lower === 'set-cookie') {
           const cookies = (webRes.headers as any).getSetCookie
             ? (webRes.headers as any).getSetCookie()
             : [val];
@@ -41,6 +42,7 @@ export class AuthController {
           res.setHeader(key, val);
         }
       });
+      res.setHeader('Access-Control-Expose-Headers', 'set-auth-token, Authorization');
 
       const bodyText = await webRes.text();
       res.send(bodyText);

@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '@prisma/client';
+import { bearer } from 'better-auth/plugins';
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,7 @@ if (process.env.BETTER_AUTH_URL) {
 }
 
 const frontendUrl = normalizeUrl(process.env.FRONTEND_URL);
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
 
 export const auth = betterAuth({
   baseURL: normalizeUrl(process.env.BETTER_AUTH_URL),
@@ -41,10 +43,28 @@ export const auth = betterAuth({
       maxAge: 5 * 60, // 5 minutes
     },
   },
-  trustedOrigins: [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    ...(frontendUrl ? [frontendUrl] : []),
-  ],
+  plugins: [bearer()],
+  advanced: {
+    useSecureCookies: isProduction,
+    defaultCookieAttributes: {
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
+      partitioned: isProduction,
+    },
+  },
+  trustedOrigins: async (request) => {
+    const origin = request?.headers?.get('origin');
+    const list = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ];
+    if (frontendUrl) list.push(frontendUrl);
+    if (origin && (origin.endsWith('.onrender.com') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      list.push(origin);
+    }
+    return list;
+  },
 });
 

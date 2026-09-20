@@ -11,7 +11,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { data: session, isPending } = useSession();
   const location = useLocation();
 
-  if (isPending) {
+  const hasLocalAuth = typeof window !== 'undefined' && (
+    !!localStorage.getItem('agentforge_token') || !!localStorage.getItem('agentforge_user')
+  );
+
+  if (isPending && !hasLocalAuth) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100">
         <div className="flex flex-col items-center gap-3">
@@ -24,7 +28,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!session?.user) {
+  if (!session?.user && !hasLocalAuth) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
