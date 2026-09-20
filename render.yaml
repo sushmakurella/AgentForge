@@ -3,6 +3,7 @@ services:
   - type: web
     name: agentforge-backend
     runtime: node
+    plan: free
     rootDir: backend
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm run start
@@ -48,3 +49,4 @@ services:
           type: web
           name: agentforge-backend
           property: host
+
