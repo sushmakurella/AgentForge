@@ -1,6 +1,7 @@
 import { Agent, CreateAgentPayload, CreateToolPayload, ProviderMeta, Tool } from '../types';
 
-const API_BASE = 'http://localhost:4000/api';
+const SERVER_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '');
+const API_BASE = `${SERVER_URL}/api`;
 
 export async function getHealth() {
   const res = await fetch(`${API_BASE}/health`);

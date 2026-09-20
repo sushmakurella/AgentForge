@@ -8,8 +8,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS with credentials for Better Auth cookies and headers
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.replace(/\/$/, '')] : []),
+  ];
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive origin with credentials support for production deployment
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
