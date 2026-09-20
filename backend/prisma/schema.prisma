@@ -1,0 +1,251 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  CREATOR
+  MEMBER
+}
+
+model User {
+  id             String        @id @default(uuid())
+  name           String?
+  email          String        @unique
+  emailVerified  Boolean       @default(false)
+  image          String?
+  role           UserRole      @default(CREATOR)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  agents           Agent[]
+  tokenUsages      TokenUsage[]
+  agentPermissions AgentPermission[]
+  sessions         Session[]
+  accounts         Account[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verifications")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  users     User[]
+  agents    Agent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model Agent {
+  id                  String              @id @default(uuid())
+  name                String
+  description         String?
+  slug                String              @unique
+  provider            String              @default("google") // "openai" | "google" | "anthropic"
+  model               String              @default("gemini-1.5-flash") // "gpt-4o", "gemini-1.5-flash", etc.
+  systemPrompt        String              @db.Text
+  instructions        String?             @db.Text
+  guardrails          String?             @db.Text
+  temperature         Float               @default(0.7)
+  maxTokens           Int                 @default(2048)
+  isPublic            Boolean             @default(false)
+  status              String              @default("PUBLISHED") // "DRAFT" | "PUBLISHED" | "ARCHIVED"
+  useCustomKey        Boolean             @default(false)
+  encryptedVendorKey  String?             @db.Text // Encrypted BYOK key
+  
+  accessScope         AccessScope         @default(ORGANIZATION)
+  
+  organizationId      String?
+  organization        Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  creatorId           String?
+  creator             User?               @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  
+  tools               AgentTool[]
+  documents           KnowledgeDocument[]
+  sessions            ChatSession[]
+  tokenUsages         TokenUsage[]
+  permissions         AgentPermission[]
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@map("agents")
+}
+
+model Tool {
+  id                  String      @id @default(uuid())
+  name                String      @unique
+  description         String
+  toolType            String      @default("API") // "API" | "CODE"
+  code                String?     @db.Text       // JavaScript code function
+  endpointUrl         String?                    // Optional for code tools
+  httpMethod          String      @default("POST") // "GET" | "POST" | "PUT" | "DELETE"
+  customHeaders       String?     @db.Text       // JSON string of custom headers
+  requestBodyFormat   String?     @db.Text       // Optional JSON template / format
+  authType            String      @default("NONE") // "NONE" | "BEARER" | "CUSTOM_HEADER" | "BASIC" | "HMAC"
+  encryptedAuthSecret String?     @db.Text
+  headerKey           String?     // e.g. "X-API-KEY"
+  signingSecret       String?     // For HMAC request signing
+  parametersSchema    String?     @db.Text // JSON Schema representation for LLM function calling
+  isSystem            Boolean     @default(false)
+
+  agents              AgentTool[]
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@map("tools")
+}
+
+model AgentTool {
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([agentId, toolId])
+  @@map("agent_tools")
+}
+
+model KnowledgeDocument {
+  id        String   @id @default(uuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title     String
+  fileType  String   @default("text") // "pdf" | "docx" | "txt" | "url"
+  sourceUrl String?
+  content   String?  @db.Text
+  status    String   @default("READY") // "PROCESSING" | "READY" | "FAILED"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("knowledge_documents")
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  agentId   String
+  agent     Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId    String?
+  title     String        @default("New Conversation")
+  messages  ChatMessage[]
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id         String      @id @default(uuid())
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       String      // "user" | "assistant" | "system" | "tool"
+  content    String      @db.Text
+  toolCalls  String?     @db.Text
+  tokensUsed Int?
+
+  createdAt  DateTime    @default(now())
+
+  @@map("chat_messages")
+}
+
+enum AccessScope {
+  PRIVATE
+  ORGANIZATION
+  PUBLIC
+}
+
+enum PermissionLevel {
+  CAN_CHAT
+  CAN_EDIT
+  CAN_MANAGE
+}
+
+model TokenUsage {
+  id               String   @id @default(uuid())
+  agentId          String
+  agent            Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId        String?
+  model            String
+  provider         String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  costEstimate     Float    @default(0)
+  createdAt        DateTime @default(now())
+
+  @@map("token_usages")
+}
+
+model AgentPermission {
+  id              String          @id @default(uuid())
+  agentId         String
+  agent           Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionLevel PermissionLevel @default(CAN_CHAT)
+  createdAt       DateTime        @default(now())
+
+  @@unique([agentId, userId])
+  @@map("agent_permissions")
+}
+
+
